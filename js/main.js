@@ -1,30 +1,85 @@
-import { getNextPaymentDate } from "./calculations.js";
-import { parseISODate, formatISODate } from "./dates.js";
+import { validateSubscription } from "./validation.js";
+import {
+  loadSubscriptions,
+  saveSubscriptions,
+  STORAGE_KEY,
+  BACKUP_KEY,
+} from "./storage.js";
 
-const tests = [
-  { name: "Monthly, regular day", billingCycle: "monthly", startDate: "2026-01-15", today: "2026-11-17", expected: "2026-12-15" },
-  { name: "Monthly on the 31st, February", billingCycle: "monthly", startDate: "2026-01-31", today: "2026-02-10", expected: "2026-02-28" },
-  { name: "Monthly on the 31st, back to 31", billingCycle: "monthly", startDate: "2026-01-31", today: "2026-03-01", expected: "2026-03-31" },
-  { name: "Annual on Feb 29, non-leap year", billingCycle: "annual", startDate: "2024-02-29", today: "2026-11-17", expected: "2027-02-28" },
-  { name: "Annual on Feb 29, leap year", billingCycle: "annual", startDate: "2024-02-29", today: "2027-03-01", expected: "2028-02-29" },
-  { name: "Weekly, due today", billingCycle: "weekly", startDate: "2026-11-10", today: "2026-11-17", expected: "2026-11-17" },
-  { name: "Weekly, across the year", billingCycle: "weekly", startDate: "2026-01-01", today: "2026-12-30", expected: "2026-12-31" },
-  { name: "Start date in the future", billingCycle: "monthly", startDate: "2026-12-01", today: "2026-11-17", expected: "2026-12-01" },
-  { name: "Quarterly on the 31st, year rollover", billingCycle: "quarterly", startDate: "2026-01-31", today: "2026-11-17", expected: "2027-01-31" },
-];
+const valid = {
+  id: "1",
+  name: "Netflix",
+  priceCents: 1299,
+  currency: "EUR",
+  billingCycle: "monthly",
+  startDate: "2026-01-15",
+  category: "Streaming",
+  status: "active",
+  notes: "",
+};
 
-for (const test of tests) {
-  const subscription = {
-    billingCycle: test.billingCycle,
-    startDate: test.startDate,
-  };
-  const next = getNextPaymentDate(subscription, parseISODate(test.today));
-  const actual = formatISODate(next);
-
-  console.log(
-    actual === test.expected ? "PASS" : "FAIL",
-    test.name,
-    "| expected:", test.expected,
-    "| got:", actual
-  );
+function check(name, condition) {
+  console.log(condition ? "PASS" : "FAIL", name);
 }
+
+function throwsError(fn) {
+  try {
+    fn();
+    return false;
+  } catch {
+    return true;
+  }
+}
+
+function resetStorage() {
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(BACKUP_KEY);
+}
+
+// ---- Validation ----
+check("valid subscription has no errors", validateSubscription(valid).length === 0);
+
+const brokenErrors = validateSubscription({
+  ...valid,
+  name: "   ",
+  priceCents: 12.5,
+  billingCycle: "daily",
+  startDate: "2026-02-31",
+  status: "gone",
+});
+check("5 broken fields give 5 errors", brokenErrors.length === 5);
+check("null is rejected", validateSubscription(null).length > 0);
+
+// ---- Storage ----
+resetStorage();
+check("empty storage loads as empty list", loadSubscriptions().length === 0);
+
+saveSubscriptions([valid]);
+check(
+  "saved data loads back identical",
+  JSON.stringify(loadSubscriptions()) === JSON.stringify([valid])
+);
+
+check(
+  "saving invalid data throws",
+  throwsError(() => saveSubscriptions([{ ...valid, priceCents: -5 }]))
+);
+check(
+  "saving duplicate ids throws",
+  throwsError(() => saveSubscriptions([valid, valid]))
+);
+
+resetStorage();
+localStorage.setItem(STORAGE_KEY, "{not json");
+check("damaged JSON loads as empty list", loadSubscriptions().length === 0);
+check("damaged JSON is backed up", localStorage.getItem(BACKUP_KEY) === "{not json");
+
+resetStorage();
+localStorage.setItem(
+  STORAGE_KEY,
+  JSON.stringify({ version: 1, subscriptions: [valid, { name: "broken" }] })
+);
+check("only valid items are kept", loadSubscriptions().length === 1);
+check("partially invalid data is backed up", localStorage.getItem(BACKUP_KEY) !== null);
+
+resetStorage();

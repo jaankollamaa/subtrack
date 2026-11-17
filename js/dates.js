@@ -1,6 +1,8 @@
 // Small date helpers. All dates are handled in the user's local time zone.
 // Dates are stored as "YYYY-MM-DD" strings and converted to Date objects for math.
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
 export function parseISODate(isoString) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoString);
   if (!match) {
@@ -51,4 +53,10 @@ export function addMonths(date, months) {
   const day = Math.min(date.getDate(), lastDayOfTargetMonth);
 
   return new Date(date.getFullYear(), date.getMonth() + months, day);
+}
+
+// Whole calendar days from `from` to `to` (negative if `to` is earlier).
+// Math.round absorbs the 23- and 25-hour days around daylight saving changes.
+export function daysBetween(from, to) {
+  return Math.round((startOfDay(to) - startOfDay(from)) / MS_PER_DAY);
 }

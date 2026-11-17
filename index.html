@@ -1,13 +1,30 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SubTrack</title>
+    <script>
+      // Applies a saved light theme before the page paints, to avoid a dark flash.
+      // The key must match THEME_KEY in js/theme.js.
+      try {
+        if (localStorage.getItem("subtrack:theme") === "light") {
+          document.documentElement.dataset.theme = "light";
+        }
+      } catch {}
+    </script>
     <link rel="stylesheet" href="css/styles.css" />
   </head>
   <body>
-    <h1>SubTrack</h1>
+    <header class="app-header">
+      <div class="app-header-inner">
+        <h1 class="logo">SubTrack</h1>
+        <button id="theme-toggle" class="icon-button" type="button"></button>
+      </div>
+    </header>
+
+    <main id="app" class="app-main"></main>
+
     <script type="module" src="js/main.js"></script>
   </body>
 </html>

@@ -1,5 +1,5 @@
 import { PAYMENTS_PER_YEAR } from "./constants.js";
-import { parseISODate, startOfDay, addDays, addMonths } from "./dates.js";
+import { parseISODate, startOfDay, addDays, addMonths, daysBetween } from "./dates.js";
 
 // All money values are integers in cents (1299 = 12.99 EUR).
 
@@ -67,4 +67,21 @@ export function getNextPaymentDate(subscription, today = new Date()) {
   }
 
   return paymentDate;
+}
+
+// Active subscriptions whose next payment is at most `withinDays` away
+// (pass Infinity for no limit), soonest first. Each entry looks like
+// { subscription, date, daysUntil }.
+export function getUpcomingPayments(subscriptions, withinDays, today = new Date()) {
+  return subscriptions
+    .filter((subscription) => subscription.status === "active")
+    .map((subscription) => {
+      const date = getNextPaymentDate(subscription, today);
+      return { subscription, date, daysUntil: daysBetween(today, date) };
+    })
+    .filter((payment) => payment.daysUntil <= withinDays)
+    .sort(
+      (a, b) =>
+        a.date - b.date || a.subscription.name.localeCompare(b.subscription.name)
+    );
 }

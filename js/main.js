@@ -1,6 +1,24 @@
-import { BILLING_CYCLES, STATUSES, DEFAULT_CURRENCY } from "./constants.js";
+import {
+  getAnnualCost,
+  getMonthlyCost,
+  getTotalAnnualCost,
+  getTotalMonthlyCost,
+} from "./calculations.js";
 
-console.log("SubTrack is running");
-console.log("Billing cycles:", BILLING_CYCLES);
-console.log("Statuses:", STATUSES);
-console.log("Default currency:", DEFAULT_CURRENCY);
+const testSubscriptions = [
+  { name: "Netflix", priceCents: 1299, billingCycle: "monthly", status: "active" },
+  { name: "Gym", priceCents: 500, billingCycle: "weekly", status: "active" },
+  { name: "Cloud storage", priceCents: 12000, billingCycle: "annual", status: "active" },
+  { name: "Old magazine", priceCents: 999, billingCycle: "monthly", status: "paused" },
+];
+
+for (const subscription of testSubscriptions) {
+  console.log(
+    subscription.name,
+    "| annual:", getAnnualCost(subscription),
+    "| monthly:", getMonthlyCost(subscription)
+  );
+}
+
+console.log("Total annual:", getTotalAnnualCost(testSubscriptions));
+console.log("Total monthly:", getTotalMonthlyCost(testSubscriptions));

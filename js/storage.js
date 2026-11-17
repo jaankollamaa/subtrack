@@ -18,6 +18,16 @@ function backUpRawData(raw) {
   }
 }
 
+// True if anything has ever been saved. Used to detect the very first launch:
+// an empty saved list still counts, a missing key does not.
+export function hasSavedData() {
+  try {
+    return localStorage.getItem(STORAGE_KEY) !== null;
+  } catch {
+    return false;
+  }
+}
+
 // Returns an array of valid subscriptions. Never throws.
 export function loadSubscriptions() {
   let raw;

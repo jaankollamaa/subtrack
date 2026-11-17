@@ -1,22 +1,16 @@
-import { validateSubscription } from "./validation.js";
+import { parseISODate } from "./dates.js";
+import { STORAGE_KEY, BACKUP_KEY } from "./storage.js";
+import { createSampleSubscriptions } from "./sampleData.js";
 import {
-  loadSubscriptions,
-  saveSubscriptions,
-  STORAGE_KEY,
-  BACKUP_KEY,
-} from "./storage.js";
-
-const valid = {
-  id: "1",
-  name: "Netflix",
-  priceCents: 1299,
-  currency: "EUR",
-  billingCycle: "monthly",
-  startDate: "2026-01-15",
-  category: "Streaming",
-  status: "active",
-  notes: "",
-};
+  getAllSubscriptions,
+  getSubscriptionById,
+  addSubscription,
+  updateSubscription,
+  setSubscriptionStatus,
+  deleteSubscription,
+  seedSampleDataIfFirstLaunch,
+  clearSampleData,
+} from "./subscriptions.js";
 
 function check(name, condition) {
   console.log(condition ? "PASS" : "FAIL", name);
@@ -36,50 +30,95 @@ function resetStorage() {
   localStorage.removeItem(BACKUP_KEY);
 }
 
-// ---- Validation ----
-check("valid subscription has no errors", validateSubscription(valid).length === 0);
+const count = () => getAllSubscriptions().length;
+const today = parseISODate("2026-11-17");
+const sampleCount = createSampleSubscriptions(today).length;
 
-const brokenErrors = validateSubscription({
-  ...valid,
-  name: "   ",
-  priceCents: 12.5,
-  billingCycle: "daily",
-  startDate: "2026-02-31",
-  status: "gone",
-});
-check("5 broken fields give 5 errors", brokenErrors.length === 5);
-check("null is rejected", validateSubscription(null).length > 0);
+const input = {
+  name: "  Disney+  ",
+  priceCents: 999,
+  billingCycle: "monthly",
+  startDate: "2026-11-01",
+  category: "Streaming",
+};
 
-// ---- Storage ----
+// ---- Sample data ----
 resetStorage();
-check("empty storage loads as empty list", loadSubscriptions().length === 0);
-
-saveSubscriptions([valid]);
+check("seeds on first launch", seedSampleDataIfFirstLaunch(today) === true);
+check("all sample items are valid and saved", count() === sampleCount);
 check(
-  "saved data loads back identical",
-  JSON.stringify(loadSubscriptions()) === JSON.stringify([valid])
+  "does not seed twice",
+  seedSampleDataIfFirstLaunch(today) === false && count() === sampleCount
 );
 
+// ---- Add ----
+const added = addSubscription(input);
+check("add returns an id", typeof added.id === "string" && added.id.length > 0);
 check(
-  "saving invalid data throws",
-  throwsError(() => saveSubscriptions([{ ...valid, priceCents: -5 }]))
+  "add trims the name and applies defaults",
+  added.name === "Disney+" &&
+    added.currency === "EUR" &&
+    added.status === "active" &&
+    added.notes === ""
 );
 check(
-  "saving duplicate ids throws",
-  throwsError(() => saveSubscriptions([valid, valid]))
+  "added item is stored",
+  getSubscriptionById(added.id)?.name === "Disney+" && count() === sampleCount + 1
+);
+check(
+  "add rejects invalid data and saves nothing",
+  throwsError(() => addSubscription({ ...input, priceCents: "9.99" })) &&
+    count() === sampleCount + 1
 );
 
-resetStorage();
-localStorage.setItem(STORAGE_KEY, "{not json");
-check("damaged JSON loads as empty list", loadSubscriptions().length === 0);
-check("damaged JSON is backed up", localStorage.getItem(BACKUP_KEY) === "{not json");
-
-resetStorage();
-localStorage.setItem(
-  STORAGE_KEY,
-  JSON.stringify({ version: 1, subscriptions: [valid, { name: "broken" }] })
+const sneaky = addSubscription({ ...input, name: "Sneaky", isSample: true, hacker: 1 });
+check(
+  "add ignores unknown fields",
+  sneaky.isSample === undefined && !("hacker" in sneaky)
 );
-check("only valid items are kept", loadSubscriptions().length === 1);
-check("partially invalid data is backed up", localStorage.getItem(BACKUP_KEY) !== null);
+
+// ---- Update ----
+const updated = updateSubscription(added.id, { priceCents: 1099, id: "hacked" });
+check(
+  "update changes fields but keeps the id",
+  updated.priceCents === 1099 && updated.id === added.id && updated.name === "Disney+"
+);
+check("update is saved", getSubscriptionById(added.id).priceCents === 1099);
+check(
+  "invalid update throws and changes nothing",
+  throwsError(() => updateSubscription(added.id, { priceCents: -1 })) &&
+    getSubscriptionById(added.id).priceCents === 1099
+);
+check(
+  "update of an unknown id throws",
+  throwsError(() => updateSubscription("nope", { name: "x" }))
+);
+check(
+  "status change is saved",
+  setSubscriptionStatus(added.id, "paused").status === "paused" &&
+    getSubscriptionById(added.id).status === "paused"
+);
+
+// ---- Delete ----
+check(
+  "delete removes the item",
+  deleteSubscription(added.id) === true && getSubscriptionById(added.id) === undefined
+);
+check("deleting again returns false", deleteSubscription(added.id) === false);
+
+// ---- Clearing sample data ----
+// "Sneaky" is now the only non-sample item left.
+check(
+  "clearSampleData removes only sample items",
+  clearSampleData() === sampleCount &&
+    count() === 1 &&
+    getAllSubscriptions()[0].id === sneaky.id
+);
+
+deleteSubscription(sneaky.id);
+check(
+  "samples do not come back after everything was deleted",
+  count() === 0 && seedSampleDataIfFirstLaunch(today) === false && count() === 0
+);
 
 resetStorage();

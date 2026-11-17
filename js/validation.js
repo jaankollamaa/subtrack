@@ -72,5 +72,13 @@ export function validateSubscription(subscription) {
     errors.push(`notes must be text of at most ${MAX_NOTES_LENGTH} characters.`);
   }
 
+  // Optional: marks demo data so it can be removed without touching real entries.
+  if (
+    subscription.isSample !== undefined &&
+    typeof subscription.isSample !== "boolean"
+  ) {
+    errors.push("isSample must be true or false when present.");
+  }
+
   return errors;
 }

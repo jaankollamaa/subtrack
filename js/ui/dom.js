@@ -19,3 +19,10 @@ export function createButton(label, className, onClick) {
   button.addEventListener("click", onClick);
   return button;
 }
+
+// A link, for navigation (buttons are for actions that change data).
+export function createLink(label, className, href) {
+  const link = el("a", className, label);
+  link.href = href;
+  return link;
+}

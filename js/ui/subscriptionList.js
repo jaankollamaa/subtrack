@@ -8,7 +8,7 @@ import {
 import { getAnnualCost, getMonthlyCost, getNextPaymentDate } from "../calculations.js";
 import { daysBetween } from "../dates.js";
 import { formatMoney, formatDate, formatCycle, formatDaysUntil } from "../format.js";
-import { el, createButton } from "./dom.js";
+import { el, createButton, createLink } from "./dom.js";
 
 // Filter state lives at module level: it survives navigating to another page
 // and back, and resets when the browser tab is reloaded.
@@ -138,6 +138,8 @@ function createRow({ subscription, nextDate }, today, onChange) {
     runAction(() => setSubscriptionStatus(id, newStatus), onChange);
 
   const actions = el("div", "sub-actions");
+  // The id goes into the URL, so it is encoded in case it contains special characters.
+  actions.append(createLink("Edit", "btn", `#/subscriptions/${encodeURIComponent(id)}/edit`));
   if (status === "active") {
     actions.append(createButton("Pause", "btn", changeStatus("paused")));
   }
@@ -180,6 +182,12 @@ function createSampleNotice(count, onChange) {
 // ---------- The page ----------
 
 export function renderSubscriptionList(container) {
+  const header = el("div", "page-header");
+  header.append(
+    el("h2", "page-title", "Subscriptions"),
+    createLink("+ Add subscription", "btn btn-primary", "#/subscriptions/new")
+  );
+
   // The controls are created once. Re-creating them on every keystroke would
   // make the search box lose focus, so only the parts below them are redrawn.
   const search = el("input", "control control-search");
@@ -268,5 +276,5 @@ export function renderSubscriptionList(container) {
   }
 
   update();
-  container.replaceChildren(noticeSlot, toolbar, summary, listCard);
+  container.replaceChildren(header, noticeSlot, toolbar, summary, listCard);
 }

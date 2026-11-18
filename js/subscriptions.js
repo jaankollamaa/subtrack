@@ -3,6 +3,8 @@ import { loadSubscriptions, saveSubscriptions, hasSavedData } from "./storage.js
 import { createSampleSubscriptions } from "./sampleData.js";
 
 // The only fields a caller may set. Anything else (including id) is ignored.
+// isSample is listed so that editing a demo subscription can set it to false:
+// the person has made it their own, and "clear sample data" must keep it.
 const EDITABLE_FIELDS = [
   "name",
   "priceCents",
@@ -12,6 +14,7 @@ const EDITABLE_FIELDS = [
   "category",
   "status",
   "notes",
+  "isSample",
 ];
 
 function generateId() {

@@ -3,6 +3,7 @@ import { initThemeToggle } from "./theme.js";
 import { renderDashboard } from "./ui/dashboard.js";
 import { renderSubscriptionList } from "./ui/subscriptionList.js";
 import { renderSubscriptionForm } from "./ui/subscriptionForm.js";
+import { renderDataPage } from "./ui/dataPage.js";
 
 // Each route pairs a pattern (matched against the URL hash) with the function
 // that draws the page. Anything in parentheses in a pattern is captured and
@@ -17,6 +18,7 @@ const ROUTES = [
     nav: "#/subscriptions",
     render: renderSubscriptionForm,
   },
+  { pattern: /^#\/data$/, nav: "#/data", render: renderDataPage },
 ];
 
 const app = document.querySelector("#app");

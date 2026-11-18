@@ -146,3 +146,11 @@ export function clearSampleData() {
   }
   return subscriptions.length - remaining.length;
 }
+
+// ---------- Backup / restore ----------
+
+// Replaces every subscription with the given list (used by import).
+// Throws, and changes nothing, if the list is invalid.
+export function replaceAllSubscriptions(subscriptions) {
+  saveSubscriptions(subscriptions);
+}

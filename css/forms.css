@@ -114,3 +114,40 @@ textarea.control {
   padding: 9px 18px;
   font-size: 0.95rem;
 }
+
+/* ---------- Data page ---------- */
+.data-grid {
+  display: grid;
+  gap: 16px;
+  max-width: 560px;
+}
+
+.card-text {
+  margin: 0 0 14px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.form-success {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--success);
+  border-radius: 10px;
+  color: var(--success);
+  font-size: 0.9rem;
+}
+
+input[type="file"].control {
+  width: 100%;
+}
+
+.control::file-selector-button {
+  margin-right: 12px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}

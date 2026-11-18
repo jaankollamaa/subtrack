@@ -26,3 +26,20 @@ export function createLink(label, className, href) {
   link.href = href;
   return link;
 }
+
+// Makes the browser download `text` as a file. It creates a temporary object
+// URL for the data and clicks an invisible link that points to it.
+export function downloadTextFile(filename, text, mimeType) {
+  const url = URL.createObjectURL(new Blob([text], { type: mimeType }));
+
+  const link = el("a");
+  link.href = url;
+  link.download = filename;
+  document.body.append(link);
+  link.click();
+  link.remove();
+
+  // Released after a moment, because some browsers need the URL a little
+  // longer to start the download. Otherwise it would stay in memory.
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}

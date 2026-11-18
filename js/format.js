@@ -42,3 +42,12 @@ export function formatCycle(billingCycle) {
     ? CYCLE_LABELS[billingCycle]
     : billingCycle;
 }
+
+// 0.4567 -> "46%". Rounded to whole percent, so a set of shares can add up
+// to 99% or 101%; that is normal rounding, not an error.
+export function formatPercent(share) {
+  return new Intl.NumberFormat(LOCALE, {
+    style: "percent",
+    maximumFractionDigits: 0,
+  }).format(share);
+}

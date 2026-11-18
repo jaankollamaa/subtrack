@@ -85,3 +85,54 @@ export function getUpcomingPayments(subscriptions, withinDays, today = new Date(
         a.date - b.date || a.subscription.name.localeCompare(b.subscription.name)
     );
 }
+
+// ---------- Statistics ----------
+
+// Spending per category for active subscriptions, largest first.
+// Each entry: { category, annualCost, monthlyCost, share } where share is
+// 0 to 1. Annual costs are summed first (exact whole cents) and monthly is
+// derived once, the same rule as the totals, so rounding never accumulates.
+export function getSpendingByCategory(subscriptions) {
+  const annualByCategory = new Map();
+  let totalAnnual = 0;
+
+  for (const subscription of subscriptions) {
+    if (subscription.status !== "active") {
+      continue;
+    }
+    const annual = getAnnualCost(subscription);
+    annualByCategory.set(
+      subscription.category,
+      (annualByCategory.get(subscription.category) ?? 0) + annual
+    );
+    totalAnnual += annual;
+  }
+
+  return [...annualByCategory]
+    .map(([category, annualCost]) => ({
+      category,
+      annualCost,
+      monthlyCost: Math.round(annualCost / 12),
+      // A total of 0 (only free subscriptions) would divide by zero.
+      share: totalAnnual === 0 ? 0 : annualCost / totalAnnual,
+    }))
+    .sort((a, b) => b.annualCost - a.annualCost || a.category.localeCompare(b.category));
+}
+
+// The `limit` most expensive active subscriptions by annual cost, with their
+// annual and monthly cost. Each entry: { subscription, annualCost, monthlyCost }.
+export function getTopSubscriptions(subscriptions, limit) {
+  return subscriptions
+    .filter((subscription) => subscription.status === "active")
+    .map((subscription) => ({
+      subscription,
+      annualCost: getAnnualCost(subscription),
+      monthlyCost: getMonthlyCost(subscription),
+    }))
+    .sort(
+      (a, b) =>
+        b.annualCost - a.annualCost ||
+        a.subscription.name.localeCompare(b.subscription.name)
+    )
+    .slice(0, limit);
+}

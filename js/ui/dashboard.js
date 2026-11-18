@@ -4,9 +4,13 @@ import {
   getTotalMonthlyCost,
   getTotalAnnualCost,
   getUpcomingPayments,
+  getSpendingByCategory,
+  getTopSubscriptions,
 } from "../calculations.js";
-import { formatMoney, formatDate, formatDaysUntil } from "../format.js";
+import { formatMoney, formatDate, formatDaysUntil, formatPercent } from "../format.js";
 import { el } from "./dom.js";
+
+const TOP_SUBSCRIPTION_COUNT = 5;
 
 function createStatCard(label, value, hint) {
   const card = el("article", "card");
@@ -56,6 +60,82 @@ function createUpcomingCard(payments, today) {
   return card;
 }
 
+// One row per category: name and amount on top, a bar showing its share below.
+// The bar is decoration only (aria-hidden): the same information is in the text.
+function createCategoryCard(categories) {
+  const card = el("section", "card");
+  card.append(el("h2", "card-title", "Spending by category"));
+
+  if (categories.length === 0) {
+    card.append(el("p", "empty-text", "No active subscriptions yet."));
+    return card;
+  }
+
+  const list = el("ul", "category-list");
+  for (const { category, monthlyCost, share } of categories) {
+    const header = el("div", "category-header");
+    header.append(
+      el("span", "category-name", category),
+      el(
+        "span",
+        "category-amount",
+        `${formatMoney(monthlyCost, DEFAULT_CURRENCY)} / month · ${formatPercent(share)}`
+      )
+    );
+
+    const fill = el("div", "bar-fill");
+    // The inline style is the one place the width needs a computed value.
+    fill.style.width = `${(share * 100).toFixed(1)}%`;
+    const track = el("div", "bar-track");
+    track.setAttribute("aria-hidden", "true");
+    track.append(fill);
+
+    const item = el("li", "category-item");
+    item.append(header, track);
+    list.append(item);
+  }
+
+  card.append(list);
+  return card;
+}
+
+function createTopCard(top) {
+  const card = el("section", "card");
+  card.append(el("h2", "card-title", "Most expensive subscriptions"));
+
+  if (top.length === 0) {
+    card.append(el("p", "empty-text", "No active subscriptions yet."));
+    return card;
+  }
+
+  const list = el("ol", "payment-list");
+  for (const { subscription, annualCost, monthlyCost } of top) {
+    const info = el("div", "payment-info");
+    info.append(
+      el("span", "payment-name", subscription.name),
+      el(
+        "span",
+        "payment-date",
+        `${formatMoney(monthlyCost, subscription.currency)} / month`
+      )
+    );
+
+    const item = el("li", "payment-item");
+    item.append(
+      info,
+      el(
+        "span",
+        "payment-amount",
+        `${formatMoney(annualCost, subscription.currency)} / year`
+      )
+    );
+    list.append(item);
+  }
+
+  card.append(list);
+  return card;
+}
+
 // Draws the whole dashboard into `container`, replacing what was there.
 export function renderDashboard(container) {
   const subscriptions = getAllSubscriptions();
@@ -96,5 +176,15 @@ export function renderDashboard(container) {
     )
   );
 
-  container.replaceChildren(statGrid, createUpcomingCard(inWindow, today));
+  const lowerGrid = el("div", "dashboard-grid");
+  lowerGrid.append(
+    createCategoryCard(getSpendingByCategory(subscriptions)),
+    createTopCard(getTopSubscriptions(subscriptions, TOP_SUBSCRIPTION_COUNT))
+  );
+
+  container.replaceChildren(
+    statGrid,
+    createUpcomingCard(inWindow, today),
+    lowerGrid
+  );
 }

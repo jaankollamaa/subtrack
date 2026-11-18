@@ -374,6 +374,58 @@ body {
   font-size: 0.9rem;
 }
 
+/* ---------- Dashboard lower section ---------- */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+/* ---------- Spending by category ---------- */
+.category-list {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.category-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px 12px;
+  margin-bottom: 6px;
+}
+
+.category-name {
+  font-weight: 550;
+  overflow-wrap: anywhere;
+}
+
+.category-amount {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.bar-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--border);
+}
+
+.bar-fill {
+  height: 100%;
+  min-width: 2px; /* a tiny share is still visible */
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 0.4s ease;
+}
+
 /* ---------- Motion ---------- */
 @keyframes fade-in {
   from {

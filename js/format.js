@@ -26,3 +26,19 @@ export function formatDaysUntil(days) {
   if (days === 1) return "Tomorrow";
   return `in ${days} days`;
 }
+
+// Wording for "€12.99 / month". If a new billing cycle is added to
+// constants.js and not here, it still displays (using its raw name).
+const CYCLE_LABELS = Object.freeze({
+  weekly: "week",
+  monthly: "month",
+  quarterly: "quarter",
+  semiannual: "6 months",
+  annual: "year",
+});
+
+export function formatCycle(billingCycle) {
+  return Object.hasOwn(CYCLE_LABELS, billingCycle)
+    ? CYCLE_LABELS[billingCycle]
+    : billingCycle;
+}

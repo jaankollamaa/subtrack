@@ -10,3 +10,12 @@ export function el(tag, className, text) {
   }
   return element;
 }
+
+// A button that runs `onClick` when pressed. type="button" stops it from
+// submitting a form if it is ever placed inside one.
+export function createButton(label, className, onClick) {
+  const button = el("button", className, label);
+  button.type = "button";
+  button.addEventListener("click", onClick);
+  return button;
+}
